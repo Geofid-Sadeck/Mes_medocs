@@ -1,0 +1,803 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Mes Médicaments">
+  <meta name="theme-color" content="#1a1a2e">
+  <link rel="manifest" href="manifest.json">
+  <title>Mes Médicaments</title>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg:        #1a1425;
+      --bg2:       #221930;
+      --bg3:       #2c2040;
+      --card:      #261d38;
+      --card2:     #2e2445;
+      --border:    rgba(200,180,255,0.10);
+      --border2:   rgba(200,180,255,0.18);
+      --text:      #f3eeff;
+      --muted:     #a094c0;
+      --soft:      #7b6fa0;
+      --accent:    #c4a8ff;
+      --accent-d:  #9d74f5;
+      --rose:      #f9a8d4;
+      --mint:      #86efb8;
+      --gold:      #fcd978;
+      --warn:      #fdba74;
+      --danger:    #fca5a5;
+      --pending:   #a5c8ff;
+      --done-bg:   rgba(134,239,184,0.07);
+      --done-bdr:  rgba(134,239,184,0.22);
+      --next-bg:   rgba(165,200,255,0.07);
+      --next-bdr:  rgba(165,200,255,0.25);
+      --late-bg:   rgba(252,165,165,0.07);
+      --late-bdr:  rgba(252,165,165,0.22);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+    body {
+      font-family: 'Nunito', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      overscroll-behavior: none;
+    }
+
+    /* subtle dot pattern background */
+    body::before {
+      content: '';
+      position: fixed; inset: 0; z-index: 0; pointer-events: none;
+      background-image: radial-gradient(circle, rgba(196,168,255,0.06) 1px, transparent 1px);
+      background-size: 28px 28px;
+    }
+
+    /* HEADER */
+    .header {
+      background: linear-gradient(160deg, #2a1f42 0%, #1e1630 100%);
+      border-bottom: 1px solid var(--border);
+      padding: 18px 20px 14px;
+      position: sticky; top: 0; z-index: 100;
+    }
+    .header-top { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 12px; }
+    .app-title {
+      font-size: 18px; font-weight: 700; letter-spacing: -.01em;
+      background: linear-gradient(120deg, var(--accent), var(--rose));
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    }
+    .app-sub { font-size: 11px; color: var(--muted); margin-top: 2px; }
+    .clock-block { text-align: right; }
+    .current-time { font-family: 'DM Mono', monospace; font-size: 22px; font-weight: 500; color: var(--text); }
+    .current-date { font-size: 11px; color: var(--muted); margin-top: 2px; }
+
+    /* DAY SELECTOR */
+    .day-row { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+    .day-label { font-size: 12px; color: var(--muted); margin-right: 2px; }
+    .day-btn {
+      padding: 5px 14px; border-radius: 20px;
+      border: 1px solid var(--border2);
+      background: rgba(255,255,255,0.04);
+      color: var(--muted); font-size: 12px; font-weight: 600;
+      font-family: 'Nunito', sans-serif; cursor: pointer; transition: all .18s;
+    }
+    .day-btn.active {
+      background: linear-gradient(135deg, var(--accent-d), #b06ef5);
+      color: #fff; border-color: transparent;
+      box-shadow: 0 2px 12px rgba(157,116,245,0.35);
+    }
+
+    /* PROGRESS */
+    .progress-bar-wrap {
+      background: var(--bg2);
+      border-bottom: 1px solid var(--border);
+      padding: 12px 20px;
+      position: relative; z-index: 1;
+    }
+    .progress-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 7px; }
+    .progress-label { font-size: 12px; color: var(--muted); font-weight: 600; }
+    .progress-count { font-size: 12px; font-family: 'DM Mono', monospace; color: var(--accent); }
+    .bar-bg { height: 6px; background: rgba(255,255,255,0.06); border-radius: 3px; }
+    .bar-fill {
+      height: 6px; border-radius: 3px;
+      background: linear-gradient(90deg, var(--accent-d), var(--rose), var(--mint));
+      background-size: 200% 100%;
+      transition: width .5s cubic-bezier(.4,0,.2,1);
+      animation: shimmer 3s linear infinite;
+    }
+    @keyframes shimmer { 0%{background-position:100% 0} 100%{background-position:-100% 0} }
+
+    /* MAIN */
+    .main { padding: 16px 14px 100px; position: relative; z-index: 1; }
+
+    /* SECTION */
+    .section { margin-bottom: 22px; }
+    .section-head {
+      display: flex; align-items: center; gap: 8px;
+      margin-bottom: 10px; padding: 0 4px;
+    }
+    .section-pill {
+      font-size: 11px; font-weight: 700; color: var(--accent);
+      background: rgba(196,168,255,0.12);
+      padding: 3px 12px; border-radius: 20px; letter-spacing: .06em;
+      text-transform: uppercase;
+    }
+    .section-line { flex: 1; height: 1px; background: var(--border); }
+
+    /* CARD */
+    .med-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 16px 16px;
+      margin-bottom: 10px;
+      cursor: pointer;
+      transition: transform .15s, box-shadow .15s, border-color .2s, background .2s;
+      position: relative; overflow: hidden;
+    }
+    .med-card:active { transform: scale(0.985); }
+    .med-card::after {
+      content: '';
+      position: absolute; top: 0; left: 0; right: 0; height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(196,168,255,0.25), transparent);
+      opacity: 0; transition: opacity .2s;
+    }
+    .med-card:hover::after { opacity: 1; }
+
+    .med-card.status-next {
+      background: var(--next-bg); border-color: var(--next-bdr);
+      box-shadow: 0 4px 20px rgba(165,200,255,0.08);
+    }
+    .med-card.status-done {
+      background: var(--done-bg); border-color: var(--done-bdr);
+    }
+    .med-card.status-late {
+      background: var(--late-bg); border-color: var(--late-bdr);
+      animation: pulse-card 2s ease-in-out infinite;
+    }
+    @keyframes pulse-card {
+      0%,100% { box-shadow: 0 0 0 0 rgba(252,165,165,0); }
+      50% { box-shadow: 0 0 0 4px rgba(252,165,165,0.1); }
+    }
+
+    .card-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
+    .card-left { flex: 1; min-width: 0; }
+
+    .card-time-row { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; flex-wrap: wrap; }
+    .card-time {
+      font-family: 'DM Mono', monospace; font-size: 12px; font-weight: 500;
+      padding: 3px 10px; border-radius: 10px;
+      background: rgba(196,168,255,0.12); color: var(--accent);
+    }
+    .card-time.computed { background: rgba(165,200,255,0.12); color: var(--pending); }
+    .card-time.done { background: rgba(134,239,184,0.12); color: var(--mint); }
+    .card-time.late { background: rgba(252,165,165,0.12); color: var(--danger); }
+    .card-gap {
+      font-size: 11px; color: var(--muted);
+      background: rgba(255,255,255,0.04);
+      padding: 2px 8px; border-radius: 8px;
+    }
+
+    .card-name { font-size: 14px; font-weight: 700; color: var(--text); margin-bottom: 4px; line-height: 1.4; }
+    .card-note { font-size: 12px; color: var(--muted); line-height: 1.6; }
+    .card-note b { color: var(--warn); font-weight: 600; }
+
+    /* CHECK BUTTON */
+    .check-btn {
+      width: 40px; height: 40px; border-radius: 50%;
+      border: 1.5px solid var(--border2);
+      background: rgba(255,255,255,0.04); flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center;
+      transition: all .2s; cursor: pointer;
+    }
+    .check-btn svg { width: 16px; height: 16px; stroke: var(--soft); fill: none; stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; transition: all .2s; }
+    .med-card.status-done .check-btn {
+      background: linear-gradient(135deg, #34d399, #059669);
+      border-color: transparent;
+      box-shadow: 0 2px 10px rgba(52,211,153,0.3);
+    }
+    .med-card.status-done .check-btn svg { stroke: #fff; }
+    .med-card.status-next .check-btn { border-color: var(--pending); background: rgba(165,200,255,0.08); }
+    .med-card.status-next .check-btn svg { stroke: var(--pending); }
+    .med-card.status-late .check-btn { border-color: var(--danger); background: rgba(252,165,165,0.08); }
+    .med-card.status-late .check-btn svg { stroke: var(--danger); }
+
+    /* BADGES */
+    .taken-badge {
+      display: inline-flex; align-items: center; gap: 4px;
+      font-size: 11px; font-weight: 600; color: var(--mint); margin-top: 7px;
+      background: rgba(134,239,184,0.10); padding: 3px 10px; border-radius: 20px;
+      border: 1px solid rgba(134,239,184,0.18);
+    }
+    .alarm-badge {
+      display: inline-flex; align-items: center; gap: 4px;
+      font-size: 11px; font-weight: 600; color: var(--pending); margin-top: 5px;
+      background: rgba(165,200,255,0.08); padding: 3px 10px; border-radius: 20px;
+      border: 1px solid rgba(165,200,255,0.15);
+    }
+
+    /* WARNING BOX */
+    .alert-box {
+      background: rgba(253,186,116,0.07);
+      border: 1px solid rgba(253,186,116,0.2);
+      border-radius: 16px; padding: 13px 16px; margin-bottom: 16px;
+      font-size: 12px; color: var(--warn); line-height: 1.7; font-weight: 500;
+    }
+    .alert-box strong { color: var(--danger); }
+
+    /* MODAL */
+    .modal-overlay {
+      position: fixed; inset: 0; z-index: 200;
+      background: rgba(10,6,20,0.75); backdrop-filter: blur(8px);
+      display: flex; align-items: flex-end;
+      opacity: 0; pointer-events: none; transition: opacity .25s;
+    }
+    .modal-overlay.show { opacity: 1; pointer-events: all; }
+    .modal {
+      background: linear-gradient(160deg, #2e2248 0%, #231838 100%);
+      border-radius: 28px 28px 0 0;
+      border-top: 1px solid var(--border2);
+      padding: 28px 24px 44px; width: 100%;
+      transform: translateY(100%); transition: transform .35s cubic-bezier(.4,0,.2,1);
+    }
+    .modal-overlay.show .modal { transform: translateY(0); }
+    .modal-handle { width: 36px; height: 4px; background: var(--border2); border-radius: 2px; margin: 0 auto 20px; }
+    .modal-title { font-size: 20px; font-weight: 700; margin-bottom: 4px; }
+    .modal-sub { font-size: 13px; color: var(--muted); margin-bottom: 16px; line-height: 1.6; }
+    .modal-time-display {
+      font-family: 'DM Mono', monospace; font-size: 52px; font-weight: 500;
+      background: linear-gradient(120deg, var(--accent), var(--rose));
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+      text-align: center; margin: 16px 0 8px;
+    }
+    .modal-note { font-size: 13px; color: var(--muted); text-align: center; margin-bottom: 24px; line-height: 1.7; }
+    .modal-note b { color: var(--warn); }
+    .modal-btn {
+      width: 100%; padding: 17px; border-radius: 18px; border: none;
+      background: linear-gradient(135deg, var(--accent-d), #b06ef5);
+      color: #fff; font-size: 16px; font-weight: 700;
+      font-family: 'Nunito', sans-serif; cursor: pointer;
+      box-shadow: 0 4px 20px rgba(157,116,245,0.35);
+      transition: transform .1s, opacity .1s;
+    }
+    .modal-btn:active { transform: scale(0.98); opacity: .9; }
+    .modal-cancel {
+      width: 100%; padding: 13px; border-radius: 16px;
+      border: 1px solid var(--border2);
+      background: transparent; color: var(--muted); font-size: 14px;
+      font-family: 'Nunito', sans-serif; cursor: pointer; margin-top: 10px;
+    }
+
+    /* ALARM TOAST */
+    .alarm-toast {
+      position: fixed; top: 16px; left: 50%;
+      transform: translateX(-50%) translateY(-130px);
+      background: linear-gradient(135deg, #2e2248, #231838);
+      border: 1px solid var(--accent);
+      border-radius: 20px;
+      padding: 14px 18px; min-width: 290px; max-width: 350px; z-index: 300;
+      display: flex; align-items: center; gap: 12px;
+      transition: transform .45s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      box-shadow: 0 8px 32px rgba(0,0,0,0.5), 0 0 0 1px rgba(196,168,255,0.1);
+    }
+    .alarm-toast.show { transform: translateX(-50%) translateY(0); }
+    .alarm-icon { font-size: 26px; }
+    .alarm-text { flex: 1; }
+    .alarm-text strong { font-size: 14px; font-weight: 700; display: block; margin-bottom: 2px; color: var(--text); }
+    .alarm-text span { font-size: 12px; color: var(--muted); }
+    .alarm-dismiss {
+      font-size: 12px; font-weight: 600; cursor: pointer;
+      padding: 5px 12px; border-radius: 10px;
+      background: rgba(196,168,255,0.12); border: 1px solid var(--border2);
+      color: var(--accent); font-family: 'Nunito', sans-serif;
+    }
+
+    /* RESET */
+    .reset-area { text-align: center; padding: 10px; }
+    .reset-btn {
+      background: none; border: none; color: var(--soft); font-size: 12px;
+      cursor: pointer; font-family: 'Nunito', sans-serif;
+      padding: 6px 14px; border-radius: 10px;
+      border: 1px solid var(--border);
+      transition: color .15s, border-color .15s;
+    }
+    .reset-btn:hover { color: var(--muted); border-color: var(--border2); }
+
+    /* ALL DONE */
+    .all-done { text-align: center; padding: 36px 20px; display: none; }
+    .all-done.show { display: block; }
+    .all-done-icon { font-size: 52px; margin-bottom: 14px; }
+    .all-done h3 { font-size: 22px; font-weight: 700; color: var(--mint); margin-bottom: 8px; }
+    .all-done p { font-size: 14px; color: var(--muted); line-height: 1.6; }
+
+    @media (min-width: 480px) {
+      .main { max-width: 440px; margin: 0 auto; }
+      .progress-bar-wrap, .header { max-width: 100%; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-top">
+    <div>
+      <div class="app-title">💊 Mes Médicaments</div>
+      <div class="app-sub" id="date-display"></div>
+    </div>
+    <div class="clock-block">
+      <div class="current-time" id="clock-display">--:--</div>
+    </div>
+  </div>
+  <div class="day-row">
+    <span class="day-label">Alternance :</span>
+    <button class="day-btn active" onclick="setDay(1,this)">Jour 1</button>
+    <button class="day-btn" onclick="setDay(2,this)">Jour 2</button>
+    <button class="day-btn" onclick="setDay(3,this)">Jour 3</button>
+  </div>
+</div>
+
+<div class="progress-bar-wrap">
+  <div class="progress-row">
+    <span class="progress-label">Progression du jour</span>
+    <span class="progress-count" id="prog-count">0 / 0</span>
+  </div>
+  <div class="bar-bg"><div class="bar-fill" id="prog-bar" style="width:0%"></div></div>
+</div>
+
+<div class="main">
+  <div class="alert-box">
+    ⚠️ Ne jamais combiner : <strong>Fer + Calcium</strong> · <strong>Fer + Maloxine</strong><br>
+    Toujours laisser <strong>2 à 3h d'écart</strong> entre ces associations.
+  </div>
+
+  <div id="meds-list"></div>
+  <div class="all-done" id="all-done">
+    <div class="all-done-icon">🌙</div>
+    <h3>Tous les médicaments pris !</h3>
+    <p>Bonne nuit. Reviens demain matin.</p>
+  </div>
+  <div class="reset-area">
+    <button class="reset-btn" onclick="resetDay()">Réinitialiser pour demain</button>
+  </div>
+</div>
+
+<!-- MODAL confirmation -->
+<div class="modal-overlay" id="modal" onclick="closeModal(event)">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title" id="modal-title">Confirmer la prise</div>
+    <div class="modal-sub" id="modal-sub"></div>
+    <div class="modal-time-display" id="modal-time"></div>
+    <div class="modal-note" id="modal-note"></div>
+    <button class="modal-btn" id="modal-confirm">✓ Confirmer la prise</button>
+    <button class="modal-cancel" onclick="closeModalDirect()">Annuler</button>
+  </div>
+</div>
+
+<!-- ALARM TOAST -->
+<div class="alarm-toast" id="alarm-toast">
+  <div class="alarm-icon">🔔</div>
+  <div class="alarm-text">
+    <strong id="alarm-name">Médicament</strong>
+    <span id="alarm-detail">Heure de prise</span>
+  </div>
+  <button class="alarm-dismiss" onclick="dismissAlarm()">OK</button>
+</div>
+
+<script>
+// ---- DATA ----
+const ALT = {
+  1: { m10: 'Fifer sirop', soir: 'Fer + acide folique' },
+  2: { m10: 'Fer + acide folique', soir: 'Fifer sirop' },
+  3: { m10: 'Fifer sirop', soir: 'Fer + acide folique' }
+};
+
+// Médicaments avec délais en minutes depuis le précédent
+// anchor: si true, c'est la prise initiale (heure libre)
+// delayFrom: id du méd de référence
+// gap: délai en minutes
+const MEDS_DEF = [
+  {
+    id: 'tothema',
+    name: 'Tot\'hema',
+    note: 'À jeun · avec eau ou jus d\'orange 🍊',
+    anchor: true,
+    section: 'matin',
+    icon: '🌅'
+  },
+  {
+    id: 'rotavit',
+    name: 'Rotavit + Butylscopolamine + Calcium/Magnésium',
+    note: 'Après le petit-déjeuner · <b>attendre 2h avant le prochain fer</b>',
+    delayFrom: 'tothema',
+    gap: 30, // 30 min après Tot'hema → repas, puis prendre
+    section: 'matin',
+    icon: '🍳'
+  },
+  {
+    id: 'fer10h',
+    name: '', // rempli dynamiquement selon le jour
+    note: 'Loin de Maloxine et calcium',
+    delayFrom: 'rotavit',
+    gap: 120,
+    section: 'matin',
+    icon: '🩸'
+  },
+  {
+    id: 'buty19h',
+    name: 'Butylscopolamine + Calcium/Magnésium',
+    note: 'Après le dîner · <b>attendre 2–3h avant Tardyferon</b>',
+    delayFrom: 'fer10h',
+    gap: 540, // ~9h après le fer du matin
+    section: 'soir',
+    icon: '🌆'
+  },
+  {
+    id: 'tardyferon',
+    name: 'Tardyferon',
+    note: 'Avec eau · <b>loin de Maloxine</b>',
+    delayFrom: 'buty19h',
+    gap: 150,
+    section: 'soir',
+    icon: '🌙'
+  },
+  {
+    id: 'maloxine',
+    name: 'Maloxine',
+    note: 'Seulement si brûlures · <b>min. 2–3h après Tardyferon</b>',
+    delayFrom: 'tardyferon',
+    gap: 150,
+    section: 'soir',
+    icon: '🔥',
+    optional: true
+  }
+];
+
+// ---- STATE ----
+let currentDay = 1;
+let state = loadState();
+let alarmTimers = {};
+let pendingConfirmId = null;
+
+function loadState() {
+  const saved = localStorage.getItem('medoc-state-v2');
+  if (saved) {
+    try {
+      const s = JSON.parse(saved);
+      // Reset si c'est un nouveau jour
+      const today = new Date().toDateString();
+      if (s.date !== today) return freshState();
+      return s;
+    } catch(e) {}
+  }
+  return freshState();
+}
+
+function freshState() {
+  return {
+    date: new Date().toDateString(),
+    day: 1,
+    taken: {} // id -> timestamp (ms)
+  };
+}
+
+function saveState() {
+  state.date = new Date().toDateString();
+  state.day = currentDay;
+  localStorage.setItem('medoc-state-v2', JSON.stringify(state));
+}
+
+// ---- TIME UTILS ----
+function fmtTime(ms) {
+  const d = new Date(ms);
+  return d.getHours().toString().padStart(2,'0') + 'h' + d.getMinutes().toString().padStart(2,'0');
+}
+
+function fmtDuration(min) {
+  if (min < 60) return min + ' min';
+  const h = Math.floor(min/60), m = min%60;
+  return h + 'h' + (m ? String(m).padStart(2,'0') : '');
+}
+
+// Calculer l'heure prévue d'un méd selon les prises précédentes
+function getScheduledTime(medId) {
+  const med = MEDS_DEF.find(m => m.id === medId);
+  if (!med) return null;
+  if (med.anchor) return null; // pas d'heure fixe
+
+  const refId = med.delayFrom;
+  const refTaken = state.taken[refId];
+  if (!refTaken) return null; // référence pas encore prise
+
+  return refTaken + med.gap * 60000;
+}
+
+// ---- RENDER ----
+function getMedName(med) {
+  if (med.id === 'fer10h') return ALT[currentDay].m10;
+  return med.name;
+}
+
+function render() {
+  const list = document.getElementById('meds-list');
+  list.innerHTML = '';
+
+  let sections = { matin: [], soir: [] };
+  MEDS_DEF.forEach(med => sections[med.section].push(med));
+
+  const now = Date.now();
+  let doneCount = 0, totalCount = 0;
+
+  ['matin', 'soir'].forEach(sec => {
+    const secDiv = document.createElement('div');
+    secDiv.className = 'section';
+
+    const head = document.createElement('div');
+    head.className = 'section-head';
+    head.innerHTML = `<span class="section-pill">${sec === 'matin' ? '☀️ Matin' : '🌙 Soir'}</span><div class="section-line"></div>`;
+    secDiv.appendChild(head);
+
+    sections[sec].forEach(med => {
+      totalCount++;
+      const takenAt = state.taken[med.id];
+      const scheduled = getScheduledTime(med.id);
+      const isDone = !!takenAt;
+      if (isDone) doneCount++;
+
+      // Déterminer le statut visuel
+      let status = 'pending';
+      if (isDone) status = 'done';
+      else if (scheduled) {
+        if (now >= scheduled) status = now - scheduled > 30*60000 ? 'late' : 'next';
+        else status = 'upcoming';
+      } else if (med.anchor && !isDone) {
+        status = 'next'; // tot'hema = toujours "suivant" si pas pris
+      }
+
+      const card = document.createElement('div');
+      card.className = `med-card status-${status}`;
+      if (!isDone) card.onclick = () => openModal(med.id);
+
+      let timeHtml = '';
+      if (isDone) {
+        timeHtml = `<span class="card-time done">✓ ${fmtTime(takenAt)}</span>`;
+      } else if (scheduled) {
+        const diff = scheduled - now;
+        const isLate = diff < 0;
+        const gapStr = isLate
+          ? `retard de ${fmtDuration(Math.round(-diff/60000))}`
+          : `dans ${fmtDuration(Math.round(diff/60000))}`;
+        timeHtml = `<span class="card-time ${isLate?'late':'computed'}">≈ ${fmtTime(scheduled)}</span><span class="card-gap">${gapStr}</span>`;
+      } else if (med.anchor) {
+        timeHtml = `<span class="card-time">Dès le réveil</span>`;
+      } else {
+        const ref = MEDS_DEF.find(m => m.id === med.delayFrom);
+        timeHtml = `<span class="card-time" style="opacity:.4">après ${getMedName(ref) || ref?.id} + ${fmtDuration(med.gap)}</span>`;
+      }
+
+      let extraHtml = '';
+      if (isDone) {
+        extraHtml = `<div class="taken-badge">✓ Pris à ${fmtTime(takenAt)}</div>`;
+      } else if (scheduled && scheduled > now) {
+        extraHtml = `<div class="alarm-badge">🔔 Rappel prévu à ${fmtTime(scheduled)}</div>`;
+      }
+
+      card.innerHTML = `
+        <div class="card-top">
+          <div class="card-left">
+            <div class="card-time-row">${timeHtml}</div>
+            <div class="card-name">${med.icon} ${getMedName(med)}${med.optional ? ' <span style="font-size:11px;color:var(--muted)">(si besoin)</span>' : ''}</div>
+            <div class="card-note">${med.note}</div>
+            ${extraHtml}
+          </div>
+          <div class="check-btn">
+            <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+          </div>
+        </div>
+      `;
+
+      secDiv.appendChild(card);
+    });
+
+    list.appendChild(secDiv);
+  });
+
+  // Progress
+  const pct = totalCount ? Math.round(doneCount/totalCount*100) : 0;
+  document.getElementById('prog-count').textContent = `${doneCount} / ${totalCount}`;
+  document.getElementById('prog-bar').style.width = pct + '%';
+
+  // All done
+  const allDone = document.getElementById('all-done');
+  if (doneCount === totalCount && totalCount > 0) {
+    allDone.classList.add('show');
+  } else {
+    allDone.classList.remove('show');
+  }
+
+  // Programmer les alarmes
+  scheduleAlarms();
+}
+
+// ---- MODAL ----
+function openModal(medId) {
+  const med = MEDS_DEF.find(m => m.id === medId);
+  if (!med || state.taken[medId]) return;
+
+  const now = Date.now();
+  pendingConfirmId = medId;
+
+  document.getElementById('modal-title').textContent = `${med.icon} ${getMedName(med)}`;
+  document.getElementById('modal-sub').textContent = med.note.replace(/<[^>]+>/g,'');
+  document.getElementById('modal-time').textContent = fmtTime(now);
+  document.getElementById('modal-note').innerHTML = `Heure de prise enregistrée : <b style="color:var(--accent)">${fmtTime(now)}</b><br><span style="font-size:12px">${med.note}</span>`;
+
+  // Update confirm button
+  const btn = document.getElementById('modal-confirm');
+  btn.onclick = () => confirmTake(medId, now);
+
+  document.getElementById('modal').classList.add('show');
+
+  // Update clock in modal
+  clearInterval(window._modalClock);
+  window._modalClock = setInterval(() => {
+    const t = Date.now();
+    document.getElementById('modal-time').textContent = fmtTime(t);
+    btn.onclick = () => confirmTake(medId, t);
+  }, 1000);
+}
+
+function confirmTake(medId, ts) {
+  state.taken[medId] = ts;
+  saveState();
+  closeModalDirect();
+  render();
+  vibrate();
+}
+
+function closeModal(e) {
+  if (e.target === document.getElementById('modal')) closeModalDirect();
+}
+
+function closeModalDirect() {
+  document.getElementById('modal').classList.remove('show');
+  clearInterval(window._modalClock);
+  pendingConfirmId = null;
+}
+
+// ---- ALARMS ----
+function scheduleAlarms() {
+  // Clear existing
+  Object.values(alarmTimers).forEach(t => clearTimeout(t));
+  alarmTimers = {};
+
+  const now = Date.now();
+  MEDS_DEF.forEach(med => {
+    if (state.taken[med.id]) return;
+    const scheduled = getScheduledTime(med.id);
+    if (!scheduled) return;
+    const delay = scheduled - now;
+    if (delay > 0 && delay < 12 * 3600000) {
+      alarmTimers[med.id] = setTimeout(() => triggerAlarm(med.id), delay);
+    }
+    // Aussi 5 min avant
+    if (delay - 300000 > 0) {
+      alarmTimers[med.id + '_pre'] = setTimeout(() => triggerPreAlarm(med.id), delay - 300000);
+    }
+  });
+}
+
+function triggerAlarm(medId) {
+  const med = MEDS_DEF.find(m => m.id === medId);
+  if (!med || state.taken[medId]) return;
+  showToast(`${med.icon} ${getMedName(med)}`, `C'est l'heure ! Appuie pour confirmer la prise.`);
+  vibrate([200, 100, 200]);
+  notifyBrowser(getMedName(med), `C'est l'heure de prendre ${getMedName(med)}`);
+}
+
+function triggerPreAlarm(medId) {
+  const med = MEDS_DEF.find(m => m.id === medId);
+  if (!med || state.taken[medId]) return;
+  showToast(`⏰ ${getMedName(med)}`, `Dans 5 minutes`);
+}
+
+function showToast(title, detail) {
+  document.getElementById('alarm-name').textContent = title;
+  document.getElementById('alarm-detail').textContent = detail;
+  const toast = document.getElementById('alarm-toast');
+  toast.classList.add('show');
+  setTimeout(() => toast.classList.remove('show'), 8000);
+}
+
+function dismissAlarm() {
+  document.getElementById('alarm-toast').classList.remove('show');
+}
+
+function vibrate(pattern) {
+  if (navigator.vibrate) navigator.vibrate(pattern || [300]);
+}
+
+function notifyBrowser(title, body) {
+  if ('Notification' in window && Notification.permission === 'granted') {
+    new Notification(title, { body, icon: 'icon-192.png' });
+  }
+}
+
+// ---- DAY ----
+function setDay(d, btn) {
+  currentDay = d;
+  state.day = d;
+  saveState();
+  document.querySelectorAll('.day-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  render();
+}
+
+// ---- RESET ----
+function resetDay() {
+  if (!confirm('Réinitialiser toutes les prises du jour ?')) return;
+  state = freshState();
+  state.day = currentDay;
+  saveState();
+  Object.values(alarmTimers).forEach(t => clearTimeout(t));
+  alarmTimers = {};
+  render();
+}
+
+// ---- CLOCK ----
+function updateClock() {
+  const now = new Date();
+  const h = String(now.getHours()).padStart(2,'0');
+  const m = String(now.getMinutes()).padStart(2,'0');
+  document.getElementById('clock-display').textContent = `${h}:${m}`;
+
+  const days = ['Dimanche','Lundi','Mardi','Mercredi','Jeudi','Vendredi','Samedi'];
+  const months = ['jan','fév','mar','avr','mai','jun','jul','aoû','sep','oct','nov','déc'];
+  document.getElementById('date-display').textContent =
+    `${days[now.getDay()]} ${now.getDate()} ${months[now.getMonth()]} ${now.getFullYear()}`;
+}
+
+// ---- NOTIFICATIONS PERMISSION ----
+function requestNotifPermission() {
+  if ('Notification' in window && Notification.permission === 'default') {
+    Notification.requestPermission();
+  }
+}
+
+// ---- INIT ----
+function init() {
+  // Restore day from state
+  if (state.day) {
+    currentDay = state.day;
+    document.querySelectorAll('.day-btn').forEach(btn => {
+      if (parseInt(btn.textContent.replace('Jour ','')) === currentDay) {
+        btn.classList.add('active');
+      } else {
+        btn.classList.remove('active');
+      }
+    });
+  }
+
+  updateClock();
+  setInterval(updateClock, 10000);
+  setInterval(render, 60000); // re-render toutes les minutes
+
+  requestNotifPermission();
+  render();
+}
+
+init();
+
+// Register service worker
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./sw.js').catch(() => {});
+  });
+}
+</script>
+</body>
+</html>
